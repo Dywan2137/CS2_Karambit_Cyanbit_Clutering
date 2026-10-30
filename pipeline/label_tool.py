@@ -1,11 +1,12 @@
-"""Hand-label look-alike pairs to score the models.
+"""Hand-label look-alike pairs to calibrate the similarity floor and score models.
 
-Shows a query seed next to a candidate seed. Candidates are drawn from the
-current model's nearest neighbours (likely matches) plus some random seeds
-(likely non-matches), so both answers occur.
+Pairs are sampled evenly across similarity bands (config.LABEL_BINS), so you
+see clear twins, clear non-matches and the borderline cases in between. That
+lets `run.py similar` estimate, at each similarity level, how often you'd call
+two patterns alike.
 
 Keys in the terminal:  y = same look   n = different   s = skip   q = quit
-Answers are appended to data/labels/pairs.csv, so you can stop and resume.
+Answers are appended to data/<skin>/labels/pairs.csv, so you can stop and resume.
 """
 
 import csv
@@ -17,20 +18,29 @@ import pandas as pd
 import config as cfg
 
 
-def candidate_pairs(knn_df, seeds, n_queries=25, ranks=(1, 2, 3, 5, 10), n_random=1, seed=None):
+def candidate_pairs(z, seeds, per_bin=15, done=frozenset(), bins=cfg.LABEL_BINS, seed=None):
+    """Up to `per_bin` random unlabelled pairs from each similarity band, shuffled."""
     rng = np.random.default_rng(seed)
-    queries = rng.choice(seeds, size=min(n_queries, len(seeds)), replace=False)
+    S = z @ z.T
+    iu, ju = np.triu_indices(len(seeds), 1)
+    sim = S[iu, ju]
     pairs = []
-    for q in queries:
-        nb = knn_df[knn_df.seed == q].set_index("rank").neighbor
-        pairs += [(int(q), int(nb[r]), f"rank{r}") for r in ranks if r in nb.index]
-        others = [s for s in seeds if s != q]
-        pairs += [(int(q), int(s), "random") for s in rng.choice(others, n_random, replace=False)]
-    order = rng.permutation(len(pairs))
-    return [pairs[i] for i in order]
+    for lo, hi in zip(bins[:-1], bins[1:]):
+        idx = np.flatnonzero((sim >= lo) & (sim < hi))
+        rng.shuffle(idx)
+        taken = 0
+        for k in idx:
+            a, b = int(seeds[iu[k]]), int(seeds[ju[k]])
+            if (min(a, b), max(a, b)) in done:
+                continue
+            pairs.append((a, b, f"band{lo:.1f}"))
+            taken += 1
+            if taken == per_bin:
+                break
+    return [pairs[i] for i in rng.permutation(len(pairs))]
 
 
-def run(knn_df, seeds, n_queries=25):
+def run(z, seeds, per_bin=15):
     matplotlib.use("TkAgg")
     import matplotlib.pyplot as plt
     from PIL import Image
@@ -42,7 +52,7 @@ def run(knn_df, seeds, n_queries=25):
         done = {tuple(sorted(p)) for p in zip(old.seed_a, old.seed_b)}
     new_file = not cfg.PAIRS_CSV.exists()
 
-    todo = [p for p in candidate_pairs(knn_df, seeds, n_queries) if tuple(sorted(p[:2])) not in done]
+    todo = candidate_pairs(z, seeds, per_bin, done)
     print(f"{len(todo)} pairs to label. y = same, n = different, s = skip, q = quit")
 
     plt.ion()

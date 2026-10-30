@@ -2,15 +2,15 @@
 
 Each pattern render is served from a predictable CDN URL:
 
-    <CDN_BASE>/<knife>-<finish>-<variant>/<seed>.png
+    <CDN_BASE>/<knife>-<finish>[-<variant>]/<seed>.png
     e.g. karambit-gamma-doppler-phase-3/42.png
 
-Images land in data/raw/karambit/gamma-doppler/phase-3/seed_XXXX.png and a
+Images land in data/<skin>/raw/seed_XXXX.png and a
 manifest.csv (seed, path, status, sha256) is written next to them.
 Already-downloaded files are skipped, so an interrupted run is safe to repeat.
 
-    python scraper.py                  # all seeds 1..1000
-    python scraper.py --max-seed 50    # quick test
+    python run.py scrape --skin butterfly/marble-fade        # usual way
+    python scraper.py --max-seed 50    # quick test (skin from the SKIN env var)
 """
 
 import argparse
@@ -78,6 +78,9 @@ def scrape(seeds, folder=cfg.RAW_DIR, delay=cfg.SCRAPE_DELAY):
             time.sleep(delay)
         sha = hashlib.sha256(dest.read_bytes()).hexdigest() if dest.exists() else ""
         rows.append({"seed": seed, "path": dest.name, "status": status, "sha256": sha})
+        if failed >= 10 and ok == 0 and skipped == 0:
+            raise SystemExit(f"  The first {failed} seeds all failed. Check the skin name: "
+                             f"{cfg.CDN_BASE}/{cfg.SLUG}/<seed>.png")
         if i % 50 == 0 or i == len(seeds):
             print(f"  [{i:4d}/{len(seeds)}]  ok {ok}  skip {skipped}  fail {failed}")
 

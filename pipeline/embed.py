@@ -197,7 +197,7 @@ def load_embeddings(name, tta=True):
     return np.load(embedding_path(name, tta))
 
 
-def save_model_inputs(names, paths, seeds, proc_hw, out_root=cfg.DATA_DIR / "model_inputs"):
+def save_model_inputs(names, paths, seeds, proc_hw, out_root=cfg.MODEL_INPUTS_DIR):
     """Save every processed crop resized exactly as each model receives it
     (before colour normalisation), to out_root/<model>/seed_XXXX.png."""
     for name in names:
