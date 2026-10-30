@@ -1,0 +1,18 @@
+# Install torch with CUDA first, e.g.:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+torch
+torchvision
+transformers>=4.40
+open_clip_torch
+scikit-learn>=1.3
+umap-learn
+scipy
+numpy
+pandas
+pillow
+opencv-python
+matplotlib
+joblib
+requests
+tqdm
+jupyter
