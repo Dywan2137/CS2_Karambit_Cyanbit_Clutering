@@ -73,3 +73,5 @@ Outputs (all under `data/<skin>/`, which git ignores):
 - `results/<model>/neighbors.csv`: top 10 look-alikes per seed with similarity
 - `results/<model>/<method>/labels.csv`: group per seed (`-1` = unique)
 - `results/report.html`: visual report for the best run
+
+Claude's little assistant's note: I was bored and vibecoded this in a couple of hours, i added a guy to buy a certain karambit from him but the price was way to high and he wouldn't budge so i wanted to find a pattern that is really similar and cheaper. So at this point you can run it for whatever knife you want. Feel free to use it and if you find this helpfull at all and plan on making a steam guide or something please dont forget to mention Claude and maybe his little assistant.  
